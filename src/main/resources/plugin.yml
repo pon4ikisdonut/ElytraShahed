@@ -1,0 +1,30 @@
+name: ElytraShahed
+main: com.pon4ikisdonut.elytrashahed.ShahedPlugin
+version: ${version}
+description: Elytra TNT launcher and Shahed mode.
+authors: [pon4ikisdonut]
+api-version: '1.21'
+folia-supported: true
+commands:
+  shahed:
+    description: Toggle Shahed mode or set its power.
+    usage: /<command> [power]
+    permission: elytrashahed.shahed
+  aagun:
+    description: Give an always-charged anti-air crossbow.
+    usage: /<command>
+    permission: elytrashahed.aagun
+  ghostfirework:
+    description: Give a silent firework rocket for Elytra boosts.
+    usage: /<command> [amount]
+    permission: elytrashahed.ghostfirework
+permissions:
+  elytrashahed.shahed:
+    description: Allows controlling the Shahed mode.
+    default: op
+  elytrashahed.aagun:
+    description: Allows giving AA-Gun crossbow.
+    default: op
+  elytrashahed.ghostfirework:
+    description: Allows receiving ghost fireworks for silent boosts.
+    default: op
