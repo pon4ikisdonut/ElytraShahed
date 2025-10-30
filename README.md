@@ -51,7 +51,6 @@ Grant these permissions via your preferred permission plugin if you want non-OP 
 
 ```yaml
 max-shahed-power: 16
-# Максимальная мощность режима «Шахед» (минимум 1)
 ```
 
 - Set `max-shahed-power` to clamp `/shahed` power arguments.
