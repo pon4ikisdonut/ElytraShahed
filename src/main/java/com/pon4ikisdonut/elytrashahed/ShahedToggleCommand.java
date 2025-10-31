@@ -1,6 +1,5 @@
 package com.pon4ikisdonut.elytrashahed;
 
-import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -17,21 +16,21 @@ class ShahedToggleCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(ChatColor.RED + "Эту команду может выполнить только игрок.");
+            sender.sendMessage(plugin.message(MessageKey.ONLY_PLAYERS));
             return true;
         }
         if (!player.hasPermission("elytrashahed.shahed")) {
-            player.sendMessage(ChatColor.RED + "У тебя нет права на это.");
+            player.sendMessage(plugin.message(MessageKey.NO_PERMISSION));
             return true;
         }
 
         if (args.length == 0) {
             if (plugin.isShahed(player)) {
                 if (!plugin.deactivateShahed(player)) {
-                    player.sendMessage(ChatColor.YELLOW + "Режим «Шахед» уже выключен.");
+                    player.sendMessage(plugin.message(MessageKey.SHAHED_ALREADY_DISABLED));
                 }
-            } else if (!plugin.activateShahed(player)) {
-                player.sendMessage(ChatColor.YELLOW + "Режим «Шахед» не удалось включить.");
+            } else if (!plugin.activateShahed(player, 1)) {
+                player.sendMessage(plugin.message(MessageKey.SHAHED_ACTIVATE_FAIL));
             }
             return true;
         }
@@ -40,15 +39,18 @@ class ShahedToggleCommand implements CommandExecutor {
             int val = Integer.parseInt(args[0]);
             int max = Math.max(1, plugin.getConfig().getInt("max-shahed-power", 16));
             int clamped = Math.max(1, Math.min(max, val));
-            if (!plugin.isShahed(player)) {
-                plugin.activateShahed(player);
+            boolean success;
+            if (plugin.isShahed(player)) {
+                success = plugin.updateShahedScale(player, clamped);
+            } else {
+                success = plugin.activateShahed(player, clamped);
             }
-            plugin.setShahedScale(player, clamped);
-            player.sendMessage(ChatColor.GOLD + "Мощность «Шахеда» настроена на x" + clamped + ".");
-            plugin.getLogger().info("[" + plugin.getName() + "] " + player.getName() + " set Shahed scale to x" + clamped);
+            if (success) {
+                player.sendMessage(plugin.message(MessageKey.SHAHED_POWER_SET, clamped));
+            }
         } catch (NumberFormatException e) {
             int max = Math.max(1, plugin.getConfig().getInt("max-shahed-power", 16));
-            player.sendMessage(ChatColor.RED + "Использование: /" + label + " [1-" + max + "]");
+            player.sendMessage(plugin.message(MessageKey.SHAHED_USAGE, label, max));
         }
         return true;
     }

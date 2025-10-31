@@ -24,5 +24,5 @@ tasks.processResources {
     }
 }
 
-version = "7.0.1"
+version = "7.0.2"
 group = "com.pon4ikisdonut.elytrashahed"

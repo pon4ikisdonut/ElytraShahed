@@ -42,8 +42,6 @@ final class Translations {
         map.put(MessageKey.SHAHED_USAGE, ChatColor.RED + "Использование: /%s [1-%d]");
         map.put(MessageKey.AAGUN_RECEIVED, ChatColor.GOLD + "Получен AA-Gun.");
         map.put(MessageKey.CONFIG_RELOADED, ChatColor.GREEN + "Конфиг перезагружен (язык: %s).");
-        map.put(MessageKey.GHOST_USAGE, ChatColor.RED + "Использование: /%s [1-64]");
-        map.put(MessageKey.GHOST_RECEIVED, ChatColor.GRAY + "Выданы громкие фейерверки x%d.");
         map.put(MessageKey.REACTIVE_ONLY_GLIDING, ChatColor.YELLOW + "Реактивный импульс доступен только в полёте.");
         map.put(MessageKey.REACTIVE_TRIGGERED, ChatColor.GOLD + "Реактивный импульс активирован!");
         map.put(MessageKey.NEED_TNT, ChatColor.RED + "Нужно %d TNT в инвентаре для мощности x%d.");
@@ -63,8 +61,6 @@ final class Translations {
         map.put(MessageKey.SHAHED_USAGE, ChatColor.RED + "Usage: /%s [1-%d]");
         map.put(MessageKey.AAGUN_RECEIVED, ChatColor.GOLD + "AA-Gun received.");
         map.put(MessageKey.CONFIG_RELOADED, ChatColor.GREEN + "Configuration reloaded (language: %s).");
-        map.put(MessageKey.GHOST_USAGE, ChatColor.RED + "Usage: /%s [1-64]");
-        map.put(MessageKey.GHOST_RECEIVED, ChatColor.GRAY + "Loud fireworks x%d delivered.");
         map.put(MessageKey.REACTIVE_ONLY_GLIDING, ChatColor.YELLOW + "Reactive boost only works while gliding.");
         map.put(MessageKey.REACTIVE_TRIGGERED, ChatColor.GOLD + "Reactive boost engaged!");
         map.put(MessageKey.NEED_TNT, ChatColor.RED + "You need %d TNT in your inventory for power x%d.");

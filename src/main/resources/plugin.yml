@@ -14,10 +14,10 @@ commands:
     description: Give an always-charged anti-air crossbow.
     usage: /<command>
     permission: elytrashahed.aagun
-  ghostfirework:
-    description: Give a silent firework rocket for Elytra boosts.
-    usage: /<command> [amount]
-    permission: elytrashahed.ghostfirework
+  elytrareload:
+    description: Reload ElytraShahed configuration.
+    usage: /<command>
+    permission: elytrashahed.reload
 permissions:
   elytrashahed.shahed:
     description: Allows controlling the Shahed mode.
@@ -25,6 +25,9 @@ permissions:
   elytrashahed.aagun:
     description: Allows giving AA-Gun crossbow.
     default: op
-  elytrashahed.ghostfirework:
-    description: Allows receiving ghost fireworks for silent boosts.
+  elytrashahed.reload:
+    description: Allows reloading ElytraShahed configuration.
+    default: op
+  elytrashahed.reactive:
+    description: Allows using the reactive Shahed boost item.
     default: op

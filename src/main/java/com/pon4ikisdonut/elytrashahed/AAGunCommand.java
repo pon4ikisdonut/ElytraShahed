@@ -1,6 +1,5 @@
 package com.pon4ikisdonut.elytrashahed;
 
-import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -17,11 +16,11 @@ class AAGunCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(ChatColor.RED + "Эту команду может выполнить только игрок.");
+            sender.sendMessage(plugin.message(MessageKey.ONLY_PLAYERS));
             return true;
         }
         if (!player.hasPermission("elytrashahed.aagun")) {
-            player.sendMessage(ChatColor.RED + "У тебя нет права на это.");
+            player.sendMessage(plugin.message(MessageKey.NO_PERMISSION));
             return true;
         }
 
