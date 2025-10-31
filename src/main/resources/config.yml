@@ -1,5 +1,5 @@
 language: ru
-# Доступные значения: ru, en. Определяет язык сообщений для игроков.
+# Available language codes: ru, en, uk, pl, de, kk, es. Language files live in plugins/ElytraShahed/lang.
 
 max-shahed-power: 16
 # Максимальная мощность режима «Шахед» (минимум 1).

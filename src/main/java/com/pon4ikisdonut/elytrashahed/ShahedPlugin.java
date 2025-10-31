@@ -1,5 +1,6 @@
 package com.pon4ikisdonut.elytrashahed;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -25,9 +26,9 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
-import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
@@ -61,7 +62,7 @@ public final class ShahedPlugin extends JavaPlugin implements Listener {
     private final Set<UUID> pendingShahedDeaths = new HashSet<>();
 
     private NamespacedKey aaKey;
-    private Translations translations;
+    private final LocalizationManager localization = new LocalizationManager(this);
     private Material reactiveBoostItem = DEFAULT_REACTIVE_ITEM;
     private int reactiveBoostPower = 3;
 
@@ -100,26 +101,27 @@ public final class ShahedPlugin extends JavaPlugin implements Listener {
 
     void reloadPluginSettings() {
         reloadConfig();
+        ensureLanguageFiles();
 
         String lang = getConfig().getString("language", "ru");
-        translations = new Translations(lang);
+        localization.load(lang);
 
         reactiveBoostPower = Math.max(1, getConfig().getInt("reactive-boost-power", 3));
         String itemName = getConfig().getString("reactive-boost-item", DEFAULT_REACTIVE_ITEM.name());
         reactiveBoostItem = parseMaterial(itemName, DEFAULT_REACTIVE_ITEM);
 
         if (isEnabled()) {
-            getLogger().info("Settings reloaded: language=" + translations.getLanguageCode()
+            getLogger().info("Settings reloaded: language=" + localization.getLanguageCode()
                     + ", reactiveItem=" + reactiveBoostItem + ", boostPower=" + reactiveBoostPower);
         }
     }
 
     String message(MessageKey key, Object... args) {
-        return translations.format(key, args);
+        return localization.format(key, args);
     }
 
     String getActiveLanguage() {
-        return translations.getLanguageCode();
+        return localization.getLanguageCode();
     }
 
     NamespacedKey getAaKey() {
@@ -214,8 +216,8 @@ public final class ShahedPlugin extends JavaPlugin implements Listener {
             return;
         }
         Player player = event.getPlayer();
-        ItemStack item = event.getItem();
-        if (item == null || item.getType() != reactiveBoostItem) {
+        ItemStack handItem = player.getInventory().getItemInMainHand();
+        if (handItem == null || handItem.getType() != reactiveBoostItem) {
             return;
         }
 
@@ -231,15 +233,12 @@ public final class ShahedPlugin extends JavaPlugin implements Listener {
         }
 
         if (player.getGameMode() != GameMode.CREATIVE) {
-            ItemStack hand = player.getInventory().getItemInMainHand();
-            if (hand.getType() == reactiveBoostItem) {
-                int amount = hand.getAmount();
-                if (amount <= 1) {
-                    player.getInventory().setItemInMainHand(null);
-                } else {
-                    hand.setAmount(amount - 1);
-                    player.getInventory().setItemInMainHand(hand);
-                }
+            int amount = handItem.getAmount();
+            if (amount <= 1) {
+                player.getInventory().setItemInMainHand(null);
+            } else {
+                handItem.setAmount(amount - 1);
+                player.getInventory().setItemInMainHand(handItem);
             }
         }
 
@@ -354,7 +353,7 @@ public final class ShahedPlugin extends JavaPlugin implements Listener {
         Player player = event.getEntity();
         if (pendingShahedDeaths.remove(player.getUniqueId())) {
             event.deathMessage(Component.text(String.format(Locale.ROOT,
-                    translations.format(MessageKey.SHAHED_DEATH_MESSAGE, player.getName()))));
+                    localization.format(MessageKey.SHAHED_DEATH_MESSAGE, player.getName()))));
         }
     }
 
@@ -426,22 +425,22 @@ public final class ShahedPlugin extends JavaPlugin implements Listener {
             return true;
         }
         PlayerInventory inv = player.getInventory();
+        ItemStack probe = new ItemStack(Material.TNT, amount);
+        if (!inv.containsAtLeast(probe, amount)) {
+            return false;
+        }
         int remaining = amount;
         for (int i = 0; i < inv.getSize() && remaining > 0; i++) {
-            ItemStack item = inv.getItem(i);
-            if (item == null || item.getType() != Material.TNT) {
+            ItemStack stack = inv.getItem(i);
+            if (stack == null || stack.getType() != Material.TNT) {
                 continue;
             }
-            int take = Math.min(remaining, item.getAmount());
-            item.setAmount(item.getAmount() - take);
-            if (item.getAmount() <= 0) {
+            int take = Math.min(remaining, stack.getAmount());
+            stack.setAmount(stack.getAmount() - take);
+            if (stack.getAmount() <= 0) {
                 inv.setItem(i, null);
             }
             remaining -= take;
-        }
-        if (remaining > 0) {
-            inv.addItem(new ItemStack(Material.TNT, amount - remaining));
-            return false;
         }
         return true;
     }
@@ -595,10 +594,29 @@ public final class ShahedPlugin extends JavaPlugin implements Listener {
         }
     }
 
+    private void ensureLanguageFiles() {
+        File dataFolder = getDataFolder();
+        if (!dataFolder.exists() && !dataFolder.mkdirs()) {
+            getLogger().warning("Unable to create plugin data folder for language files.");
+        }
+        File langDir = new File(dataFolder, "lang");
+        if (!langDir.exists() && !langDir.mkdirs()) {
+            getLogger().warning("Unable to create lang directory; localization may fail.");
+            return;
+        }
+        String[] defaults = {"en", "ru", "uk", "pl", "de", "kk", "es"};
+        for (String code : defaults) {
+            File target = new File(langDir, code + ".yml");
+            if (!target.exists()) {
+                saveResource("lang/" + code + ".yml", false);
+            }
+        }
+    }
+
     private void logStartupBanner() {
         prettyLog("ElytraShahed", "enabled v" + getDescription().getVersion()
                 + " (max power=" + getMaxShahedPower()
-                + ", lang=" + translations.getLanguageCode()
+                + ", lang=" + localization.getLanguageCode()
                 + ", reactiveItem=" + reactiveBoostItem + ")");
     }
 

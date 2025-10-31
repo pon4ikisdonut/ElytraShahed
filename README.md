@@ -96,7 +96,7 @@ Key events recorded in the console:
 - Plugin enable/disable (with version, max Shahed power, language, reactive item).
 - Shahed activations/deactivations and resulting explosions.
 - AA-Gun delivery.
-- reactive boost usage, and config reloads.
+- Reactive boost usage and config reloads.
 
 This makes it easy to audit player actions and debug any suspicious activity.
 

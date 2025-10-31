@@ -34,3 +34,12 @@
 
 - Удалена команда /ghostfirework и связанные разрешения/сообщения.
 - Шахед по-прежнему использует реактивный предмет из конфига для бесшумного ускорения.
+🚀 Version 7.1.0 — Localization Pack & Reactive Fix
+
+Type: Minor update
+Highlights:
+
+- Reactive boost now fires only when the configured item is held in the main hand; empty hands no longer trigger it.
+- Added external language packs (ru, en, uk, pl, de, kk, es) in `plugins/ElytraShahed/lang`, loaded via `language` in config and refreshed with `/elytrareload`.
+- Cleaned up legacy /ghostfirework remnants, refreshed docs/config comments, and tightened TNT bookkeeping for Shahed mode.
+- Miscellaneous micro-optimisations around inventory checks and death handling.
