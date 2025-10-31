@@ -1,8 +1,8 @@
 # ElytraShahed
 
-[![Download on Modrinth](https://img.shields.io/badge/Modrinth-coming%20soon-lightgrey)](https://modrinth.com/project/elytrashahed)
+[![Download on Modrinth](https://img.shields.io/modrinth/dt/elytrashahed?label=Modrinth&logo=modrinth)](https://modrinth.com/plugin/elytrashahed)
 
-ElytraShahed is a PaperMC plugin that turns Elytra pilots into controllable “Shahed” kamikaze drones, complete with configurable blast power, AA support gear, and particle-free ghost fireworks for stealth boosts.
+ElytraShahed is a PaperMC plugin that turns Elytra pilots into controllable "Shahed" kamikaze drones, complete with configurable blast power, AA support gear, and a permission-gated reactive boost item.
 
 ## Table of Contents
 
@@ -19,13 +19,14 @@ ElytraShahed is a PaperMC plugin that turns Elytra pilots into controllable “S
 
 ## Features
 
-- **Shahed Mode Toggle** – `/shahed [power]` equips a TNT helmet, clamps power by config, and detonates on *any* collision (blocks, entities, firework hits). Automatically restores the player’s original helmet when disabled or on logout.
-- **Full Collision Detection** – Bounding-box checks ensure that even glancing contact with solid blocks triggers the explosion exactly when expected.
-- **AA-Gun Command** – `/aagun` hands out an indestructible, permanently charged crossbow that instantly recharges with a large red firework.
-- **Ghost Fireworks** – `/ghostfirework [amount]` delivers level-3 Elytra rockets with no particles or hitbox; in flight they provide a smooth velocity boost without spawning entities.
-- **Russian Localisation** – All player-facing messages are in Russian to match the original audience; console logs remain in English for clarity.
-- **Rich Logging** – Enables/disables, Shahed activations, explosions, AA-Gun deliveries, ghost fireworks grants, and boosts all leave messages in the server log.
-- **Configurable Blast Power** – `max-shahed-power` resides in `config.yml`; the plugin prints the current maximum during startup.
+- **Shahed Mode Toggle** - `/shahed [power]` equips a TNT helmet, clamps power by config, and detonates on *any* collision (blocks, entities, firework hits). Automatically restores the player's original helmet when disabled or on logout.
+- **Full Collision Detection** - Bounding-box checks ensure that even glancing contact with solid blocks triggers the explosion exactly when expected.
+- **AA-Gun Command** - `/aagun` hands out an indestructible, permanently charged crossbow that instantly recharges with a large red firework.
+- **Ghost Fireworks** - `/ghostfirework [amount]` supplies loud level-3 rockets so Elytra pilots can keep up the chase with classic particle/sound effects.
+- **Reactive Boost Item** - Right-click with the configured item (default `NETHERITE_SCRAP`) while gliding and holding the `elytrashahed.reactive` permission to gain a sustained velocity boost—no entities spawned, just pure thrust.
+- **Bilingual Messages** - Player-facing chat can be switched between Russian (`ru`) and English (`en`) via `config.yml`; console logs stay informative in English.
+- **Rich Logging** - Enables/disables, Shahed activations, explosions, AA-Gun deliveries, reactive boosts, and config reloads all leave messages in the server log.
+- **Configurable Blast Power** - `max-shahed-power` resides in `config.yml`; the plugin prints the current maximum during startup alongside language and reactive item info.
 
 ## Commands
 
@@ -33,15 +34,18 @@ ElytraShahed is a PaperMC plugin that turns Elytra pilots into controllable “S
 |---------|-------------|------------|---------|
 | `/shahed [power]` | Toggle Shahed mode or set its explosive multiplier. | `elytrashahed.shahed` | OP |
 | `/aagun` | Receive the instant-recharge AA-Gun crossbow. | `elytrashahed.aagun` | OP |
-| `/ghostfirework [amount]` | Get particle-free level-3 rocket boosts (1-64). | `elytrashahed.ghostfirework` | OP |
+| `/ghostfirework [amount]` | Give yourself loud Elytra fireworks (1-64). | `elytrashahed.ghostfirework` | OP |
+| `/elytrareload` | Reload ElytraShahed configuration without restarting. | `elytrashahed.reload` | OP |
 
 > All commands send localized feedback and log significant actions in the console.
 
 ## Permissions
 
-- `elytrashahed.shahed` – Allow toggling and configuring Shahed mode.
-- `elytrashahed.aagun` – Allow issuing the AA-Gun.
-- `elytrashahed.ghostfirework` – Allow giving ghost fireworks.
+- `elytrashahed.shahed` - Allow toggling and configuring Shahed mode.
+- `elytrashahed.aagun` - Allow issuing the AA-Gun.
+- `elytrashahed.ghostfirework` - Allow giving yourself ghost fireworks.
+- `elytrashahed.reactive` - Allow using the reactive Shahed boost item.
+- `elytrashahed.reload` - Allow reloading the plugin configuration.
 
 Grant these permissions via your preferred permission plugin if you want non-OP users to access them.
 
@@ -50,15 +54,21 @@ Grant these permissions via your preferred permission plugin if you want non-OP 
 `config.yml` is generated automatically on first launch:
 
 ```yaml
+language: ru
 max-shahed-power: 16
+reactive-boost-item: NETHERITE_SCRAP
+reactive-boost-power: 3
 ```
 
-- Set `max-shahed-power` to clamp `/shahed` power arguments.
-- Use `/reload` (not recommended) or restart the server after editing, or wire a manual reload command in the future.
+- `language` switches the in-game locale (`ru` or `en`).
+- `max-shahed-power` clamps `/shahed` power arguments.
+- `reactive-boost-item` defines which material triggers the boost.
+- `reactive-boost-power` controls boost strength/duration.
+- Run `/elytrareload` after editing to apply changes instantly.
 
 ## Installation
 
-1. Download the latest release JAR from GitHub or [Modrinth](MODRINTH_URL_PLACEHOLDER).
+1. Download the latest release JAR from GitHub or [Modrinth](https://modrinth.com/plugin/elytrashahed).
 2. Drop `ElytraShahed-<version>.jar` into your Paper server’s `plugins/` directory.
 3. Start the server — the plugin writes `config.yml`, logs a startup banner, and is ready to use.
 
@@ -86,10 +96,10 @@ Pull requests and issues are welcome. If you contribute new features, please doc
 
 Key events recorded in the console:
 
-- Plugin enable/disable (with version and max Shahed power).
+- Plugin enable/disable (with version, max Shahed power, language, reactive item).
 - Shahed activations/deactivations and resulting explosions.
 - AA-Gun delivery.
-- Ghost firework grants and in-flight boosts.
+- Ghost firework grants, reactive boost usage, and config reloads.
 
 This makes it easy to audit player actions and debug any suspicious activity.
 
@@ -103,9 +113,9 @@ Older Paper versions are not officially supported. Behaviour on Bukkit/Spigot is
 
 ## Roadmap
 
-- Config reload command.
-- Additional localization files.
-- Advanced permissions for scaling power or restricting ghost fireworks.
+- Additional localization files (e.g., Ukrainian, Polish).
+- Per-player limits for reactive boosts.
+- Optional consumable behavior for the reactive item.
 
 Feel free to open feature requests!
 
@@ -118,5 +128,4 @@ This project is distributed under the MIT License. See `LICENSE` for the full te
 **Useful Links**
 
 - GitHub Releases: https://github.com/pon4ikisdonut/ElytraShahed/releases
-- Modrinth Page: [https://modrinth.com/project/elytrashahed]
-
+- Modrinth Page: https://modrinth.com/plugin/elytrashahed
