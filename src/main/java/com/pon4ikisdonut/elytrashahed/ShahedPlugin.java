@@ -53,7 +53,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 
 public final class ShahedPlugin extends JavaPlugin implements Listener {
 
-    private static final float BASE_EXPLOSION_POWER = 5.0f;
+    private static final float DEFAULT_BASE_EXPLOSION_POWER = 5.0f;
     private static final int HELMET_SLOT = 39;
     private static final Material DEFAULT_REACTIVE_ITEM = Material.NETHERITE_SCRAP;
     private static final String PERMISSION_REACTIVE = "elytrashahed.reactive";
@@ -65,6 +65,10 @@ public final class ShahedPlugin extends JavaPlugin implements Listener {
     private final LocalizationManager localization = new LocalizationManager(this);
     private Material reactiveBoostItem = DEFAULT_REACTIVE_ITEM;
     private int reactiveBoostPower = 3;
+    private String craterMode = "vanilla"; // vanilla | funnel
+    private double funnelRadiusPerScale = 1.2;
+    private double funnelDepthPerScale = 0.6;
+    private float baseExplosionPower = DEFAULT_BASE_EXPLOSION_POWER;
 
     @Override
     public void onEnable() {
@@ -103,12 +107,17 @@ public final class ShahedPlugin extends JavaPlugin implements Listener {
         reloadConfig();
         ensureLanguageFiles();
 
-        String lang = getConfig().getString("language", "ru");
+        String lang = getConfig().getString("language", "en");
         localization.load(lang);
 
         reactiveBoostPower = Math.max(1, getConfig().getInt("reactive-boost-power", 3));
         String itemName = getConfig().getString("reactive-boost-item", DEFAULT_REACTIVE_ITEM.name());
         reactiveBoostItem = parseMaterial(itemName, DEFAULT_REACTIVE_ITEM);
+
+        baseExplosionPower = (float) Math.max(0.1, getConfig().getDouble("base-explosion-power", DEFAULT_BASE_EXPLOSION_POWER));
+        craterMode = getConfig().getString("crater-mode", "vanilla").toLowerCase(Locale.ROOT);
+        funnelRadiusPerScale = Math.max(0.1, getConfig().getDouble("funnel-radius-per-scale", 1.2));
+        funnelDepthPerScale = Math.max(0.1, getConfig().getDouble("funnel-depth-per-scale", 0.6));
 
         if (isEnabled()) {
             getLogger().info("Settings reloaded: language=" + localization.getLanguageCode()
@@ -264,10 +273,19 @@ public final class ShahedPlugin extends JavaPlugin implements Listener {
             return;
         }
 
-        getServer().getScheduler().runTask(this, () -> {
-            player.setCooldown(Material.CROSSBOW, 0);
-            chargeCrossbowWithAARocket(bow);
-        });
+        // Folia-safe: schedule on the player's entity thread next tick
+        try {
+            player.getScheduler().runDelayed(this, task -> {
+                player.setCooldown(Material.CROSSBOW, 0);
+                chargeCrossbowWithAARocket(bow);
+            }, null, 1L);
+        } catch (Throwable t) {
+            // Fallback for non-Folia servers
+            getServer().getScheduler().runTask(this, () -> {
+                player.setCooldown(Material.CROSSBOW, 0);
+                chargeCrossbowWithAARocket(bow);
+            });
+        }
     }
 
     @EventHandler
@@ -412,9 +430,12 @@ public final class ShahedPlugin extends JavaPlugin implements Listener {
             restoreHelmet(player, state.previousHelmet());
             scale = Math.max(1, Math.min(getMaxShahedPower(), state.getTntScale()));
         }
-        float power = BASE_EXPLOSION_POWER * scale;
+        float power = baseExplosionPower * scale;
         Location location = player.getLocation();
         player.getWorld().createExplosion(location, power, true, true, player);
+        if ("funnel".equalsIgnoreCase(craterMode)) {
+            tryCarveFunnelCrater(location, scale);
+        }
         pendingShahedDeaths.add(player.getUniqueId());
         player.damage(1000.0, player);
         getLogger().info("[" + getName() + "] " + player.getName() + " exploded with power x" + scale + " (" + power + ")");
@@ -489,7 +510,18 @@ public final class ShahedPlugin extends JavaPlugin implements Listener {
                     cancel();
                 }
             }
-        }.runTaskTimer(this, 0L, 1L);
+        };
+
+        // Folia-safe scheduling for per-tick boost
+        try {
+            player.getScheduler().runAtFixedRate(this, task -> runnable.run(), null, 0L, 1L);
+        } catch (Throwable t) {
+            // Fallback to Bukkit scheduler on non-Folia
+            new BukkitRunnable() {
+                @Override
+                public void run() { runnable.run(); }
+            }.runTaskTimer(this, 0L, 1L);
+        }
     }
 
     private ItemStack cloneItem(ItemStack itemStack) {
@@ -575,6 +607,36 @@ public final class ShahedPlugin extends JavaPlugin implements Listener {
 
     private int getMaxShahedPower() {
         return Math.max(1, getConfig().getInt("max-shahed-power", 16));
+    }
+
+    private void tryCarveFunnelCrater(Location center, int scale) {
+        World world = center.getWorld();
+        if (world == null) return;
+        int originX = center.getBlockX();
+        int originY = center.getBlockY();
+        int originZ = center.getBlockZ();
+
+        int depth = (int) Math.max(1, Math.round(scale * funnelDepthPerScale));
+        double baseRadius = Math.max(1.0, scale * funnelRadiusPerScale);
+
+        for (int dy = 0; dy <= depth; dy++) {
+            int y = originY - dy;
+            if (y < world.getMinHeight()) break;
+            double layerFactor = 1.0 - (dy / (double) Math.max(1, depth));
+            double radius = Math.max(1.0, baseRadius * (0.3 + 0.7 * layerFactor));
+            int r = (int) Math.ceil(radius);
+            for (int dx = -r; dx <= r; dx++) {
+                for (int dz = -r; dz <= r; dz++) {
+                    if ((dx * dx + dz * dz) <= radius * radius) {
+                        Block b = world.getBlockAt(originX + dx, y, originZ + dz);
+                        Material type = b.getType();
+                        if (!type.isAir() && type != Material.BEDROCK && type != Material.END_PORTAL_FRAME) {
+                            b.setType(Material.AIR, false);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private Material parseMaterial(String name, Material fallback) {

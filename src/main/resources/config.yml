@@ -1,11 +1,23 @@
-language: ru
-# Available language codes: ru, en, uk, pl, de, kk, es. Language files live in plugins/ElytraShahed/lang.
+language: en
+# Available language codes: en, ru, uk, pl, de, kk, es. Language files live in plugins/ElytraShahed/lang.
 
 max-shahed-power: 16
-# Максимальная мощность режима «Шахед» (минимум 1).
+# Upper bound for the /shahed explosion scale (min 1).
 
 reactive-boost-item: NETHERITE_SCRAP
-# Материал предмета, который используется для реактивного ускорения Shahed.
+# Material that triggers the reactive boost when right-clicked while gliding.
 
 reactive-boost-power: 3
-# Сила реактивного ускорения (чем выше, тем дольше и сильнее импульс).
+# Strength/duration of the reactive boost.
+
+# Explosion behavior
+base-explosion-power: 5.0
+# Multiplied by the chosen /shahed scale to get final explosion power.
+
+crater-mode: vanilla
+# vanilla = use Minecraft explosion only
+# funnel  = additionally carve a funnel-shaped crater after the explosion
+
+funnel-radius-per-scale: 1.2
+funnel-depth-per-scale: 0.6
+
