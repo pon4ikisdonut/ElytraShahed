@@ -9,6 +9,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.bukkit.Color;
 import org.bukkit.GameMode;
@@ -479,49 +480,59 @@ public final class ShahedPlugin extends JavaPlugin implements Listener {
         final int duration = 12 + power * 4;
         final UUID uuid = player.getUniqueId();
 
-        new BukkitRunnable() {
-            int ticks = 0;
-
-            @Override
-            public void run() {
-                Player target = getServer().getPlayer(uuid);
-                if (target == null || !target.isOnline()) {
-                    cancel();
-                    return;
-                }
-                if (!target.isGliding()) {
-                    cancel();
-                    return;
-                }
-                Vector direction = target.getLocation().getDirection();
-                if (direction.lengthSquared() < 1.0E-4) {
-                    direction = new Vector(0, 0, 0);
-                } else {
-                    direction = direction.normalize();
-                }
-                Vector boost = direction.multiply(strength);
-                boost.setY(boost.getY() + verticalBoost);
-                Vector newVelocity = target.getVelocity().add(boost);
-                if (newVelocity.lengthSquared() > maxSpeed * maxSpeed) {
-                    newVelocity = newVelocity.normalize().multiply(maxSpeed);
-                }
-                target.setVelocity(newVelocity);
-                if (++ticks >= duration) {
-                    cancel();
-                }
-            }
-        };
+        final AtomicInteger ticks = new AtomicInteger();
 
         // Folia-safe scheduling for per-tick boost
         try {
-            player.getScheduler().runAtFixedRate(this, task -> runnable.run(), null, 0L, 1L);
+            player.getScheduler().runAtFixedRate(this, task -> {
+                Player target = getServer().getPlayer(uuid);
+                if (!applyReactiveBoostTick(target, strength, verticalBoost, maxSpeed)) {
+                    task.cancel();
+                    return;
+                }
+                if (ticks.incrementAndGet() >= duration) {
+                    task.cancel();
+                }
+            }, null, 0L, 1L);
         } catch (Throwable t) {
             // Fallback to Bukkit scheduler on non-Folia
             new BukkitRunnable() {
                 @Override
-                public void run() { runnable.run(); }
+                public void run() {
+                    Player target = getServer().getPlayer(uuid);
+                    if (!applyReactiveBoostTick(target, strength, verticalBoost, maxSpeed)) {
+                        cancel();
+                        return;
+                    }
+                    if (ticks.incrementAndGet() >= duration) {
+                        cancel();
+                    }
+                }
             }.runTaskTimer(this, 0L, 1L);
         }
+    }
+
+    private boolean applyReactiveBoostTick(Player target, double strength, double verticalBoost, double maxSpeed) {
+        if (target == null || !target.isOnline()) {
+            return false;
+        }
+        if (!target.isGliding()) {
+            return false;
+        }
+        Vector direction = target.getLocation().getDirection();
+        if (direction.lengthSquared() < 1.0E-4) {
+            direction = new Vector(0, 0, 0);
+        } else {
+            direction = direction.normalize();
+        }
+        Vector boost = direction.multiply(strength);
+        boost.setY(boost.getY() + verticalBoost);
+        Vector newVelocity = target.getVelocity().add(boost);
+        if (newVelocity.lengthSquared() > maxSpeed * maxSpeed) {
+            newVelocity = newVelocity.normalize().multiply(maxSpeed);
+        }
+        target.setVelocity(newVelocity);
+        return true;
     }
 
     private ItemStack cloneItem(ItemStack itemStack) {
@@ -678,6 +689,8 @@ public final class ShahedPlugin extends JavaPlugin implements Listener {
     private void logStartupBanner() {
         prettyLog("ElytraShahed", "enabled v" + getDescription().getVersion()
                 + " (max power=" + getMaxShahedPower()
+                + ", basePower=" + baseExplosionPower
+                + ", crater=" + craterMode
                 + ", lang=" + localization.getLanguageCode()
                 + ", reactiveItem=" + reactiveBoostItem + ")");
     }
