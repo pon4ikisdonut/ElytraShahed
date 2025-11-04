@@ -435,7 +435,7 @@ public final class ShahedPlugin extends JavaPlugin implements Listener {
         Location location = player.getLocation();
         player.getWorld().createExplosion(location, power, true, true, player);
         if ("funnel".equalsIgnoreCase(craterMode)) {
-            tryCarveFunnelCrater(location, scale);
+            scheduleCraterTask(location, scale);
         }
         pendingShahedDeaths.add(player.getUniqueId());
         player.damage(1000.0, player);
@@ -620,9 +620,20 @@ public final class ShahedPlugin extends JavaPlugin implements Listener {
         return Math.max(1, getConfig().getInt("max-shahed-power", 16));
     }
 
-    private void tryCarveFunnelCrater(Location center, int scale) {
+    private void scheduleCraterTask(Location center, int scale) {
         World world = center.getWorld();
-        if (world == null) return;
+        if (world == null) {
+            return;
+        }
+        Runnable craterTask = () -> carveFunnelCrater(world, center, scale);
+        try {
+            getServer().getRegionScheduler().execute(this, center, craterTask);
+        } catch (NoSuchMethodError | UnsupportedOperationException | IllegalStateException ignored) {
+            craterTask.run();
+        }
+    }
+
+    private void carveFunnelCrater(World world, Location center, int scale) {
         int originX = center.getBlockX();
         int originY = center.getBlockY();
         int originZ = center.getBlockZ();
@@ -632,19 +643,23 @@ public final class ShahedPlugin extends JavaPlugin implements Listener {
 
         for (int dy = 0; dy <= depth; dy++) {
             int y = originY - dy;
-            if (y < world.getMinHeight()) break;
+            if (y < world.getMinHeight()) {
+                break;
+            }
             double layerFactor = 1.0 - (dy / (double) Math.max(1, depth));
             double radius = Math.max(1.0, baseRadius * (0.3 + 0.7 * layerFactor));
             int r = (int) Math.ceil(radius);
             for (int dx = -r; dx <= r; dx++) {
                 for (int dz = -r; dz <= r; dz++) {
-                    if ((dx * dx + dz * dz) <= radius * radius) {
-                        Block b = world.getBlockAt(originX + dx, y, originZ + dz);
-                        Material type = b.getType();
-                        if (!type.isAir() && type != Material.BEDROCK && type != Material.END_PORTAL_FRAME) {
-                            b.setType(Material.AIR, false);
-                        }
+                    if ((dx * dx + dz * dz) > radius * radius) {
+                        continue;
                     }
+                    Block block = world.getBlockAt(originX + dx, y, originZ + dz);
+                    Material type = block.getType();
+                    if (type.isAir() || type == Material.BEDROCK || type == Material.END_PORTAL_FRAME) {
+                        continue;
+                    }
+                    block.setType(Material.AIR, false);
                 }
             }
         }
